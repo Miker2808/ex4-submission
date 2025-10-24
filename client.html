@@ -127,6 +127,17 @@
             overflow: auto;
         }
 
+        .history-container {
+            position: relative;
+        }
+
+        .history-container .button-container {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            margin-top: 0;
+        }
+
         .variables-row {
             display: flex;
             gap: 20px;
@@ -405,7 +416,10 @@
 
         .modal-content {
             background-color: white;
-            margin: 15% auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             padding: 20px;
             border-radius: 8px;
             width: 400px;
@@ -427,7 +441,7 @@
 
         .table-scroll {
             max-height: 600px;       /* fixed maximum table height */
-            overflow-y: auto;        /* vertical scrollbar when content exceeds height */
+            overflow: auto;          /* vertical and horizontal scrollbar when content exceeds */
             border: 1px solid #ccc;  /* optional border */
         }
 
@@ -493,6 +507,21 @@
         .fixed-table th:nth-child(6), /* Gen */
         .fixed-table td:nth-child(6) {
             width: 60px;           /* 2 characters */
+        }
+
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .status-table th, .status-table td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .status-table thead th {
+            background: #f0f0f0;
         }
 
     </style>
@@ -569,7 +598,7 @@
             </div>
 
             <!-- History Table -->
-            <div class="table-container">
+            <div class="table-container history-container">
                 <h3>Execution History</h3>
                 <table>
                     <thead>
@@ -586,7 +615,23 @@
                     <tbody id="historyTableBody"></tbody>
                 </table>
                 <div class="button-container">
+                    <button onclick="showStatus()">Show Status</button>
                     <button onclick="reRunHistory()">Re-Run</button>
+                </div>
+                <div id="statusContainer" class="hidden table-container">
+                    <h3>Status Variables</h3>
+                    <div class="table-scroll">
+                        <table class="status-table">
+                            <thead>
+                                <tr>
+                                    <th>Variable</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statusTableBody"></tbody>
+                        </table>
+                    </div>
+                    <button onclick="hideStatus()">Close</button>
                 </div>
             </div>
 
@@ -993,6 +1038,37 @@
             } catch (e) {
                 showAlert('Failed to reach the server', 'Network error');
             }
+        }
+
+        async function showStatus() {
+            if (!selectedHistory) return;
+
+            try {
+                const response = await fetch(`${API_URL}/dashboard/history-status?user=${currentUsername}&history=${selectedUser || currentUsername}&index=${selectedHistory.num}`, {
+                    method: 'GET'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const tbody = document.getElementById('statusTableBody');
+                    tbody.innerHTML = '';
+                    for (const [key, value] of Object.entries(data)) {
+                        const row = tbody.insertRow();
+                        row.insertCell(0).textContent = key;
+                        row.insertCell(1).textContent = value;
+                    }
+                    document.getElementById('statusContainer').classList.remove('hidden');
+                } else {
+                    const error = await response.text();
+                    showAlert('Failed to get status', error);
+                }
+            } catch (e) {
+                showAlert('Failed to reach the server', 'Network error');
+            }
+        }
+
+        function hideStatus() {
+            document.getElementById('statusContainer').classList.add('hidden');
         }
 
         function showExecutionPage() {
