@@ -1,1 +1,3 @@
-npx http-server -p 8000
+@echo off
+echo Checking for http-server and starting server...
+npx -y http-server -p 8000
